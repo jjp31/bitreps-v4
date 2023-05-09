@@ -1,5 +1,6 @@
 from scipy.stats import chisquare
 from collections import Counter
+from pathlib import Path
 import numpy as np
 import argparse
 import logging
@@ -7,9 +8,35 @@ import json
 import sys
 import os
 
-JSON_DIR = os.path.join(".", "json")
-OUTPUT_DIR = os.path.join(".", "output")
+
+OUTPUT_DIR = os.path.join(".", "output")    # Directory where BitReps writes statistical output
 MIN_FREQ = 5
+
+
+def dir_setup():
+    """
+    Create the necessary directories if they don't already exist
+    :return: None
+    """
+    if not os.path.exists(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
+
+
+def write_output(obs, obs_merged, exp, exp_merged, fp):
+    logging.info(f"Observed Before Merge: {obs}")
+    logging.info(f"Expected Before Merge: {exp}")
+
+    logging.info(f"Observed Merged: {obs_merged}")
+    logging.info(f"Expected Merged: {exp_merged}")
+
+    logging.info(f"Result: {chisquare(obs_merged, exp_merged)}")
+
+    with open(fp, "w") as f:
+        f.write(f"Observed Before Merge: {obs}\n")
+        f.write(f"Expected Before Merge: {exp}\n")
+        f.write(f"Observed Merged: {obs_merged}\n")
+        f.write(f"Expected Merged: {exp_merged}\n")
+        f.write(f"Result: {chisquare(obs_merged, exp_merged)}\n")
 
 
 def merge_buckets(obs, exp):
@@ -55,6 +82,8 @@ def prep_frequency_distributions(obs, exp):
 
 
 def main():
+    dir_setup()
+
     # Set up debugger
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
@@ -96,13 +125,8 @@ def main():
 
     obs_merged, exp_merged = merge_buckets(obs, exp)
 
-    logging.info(f"Observed Before Merge: {obs}")
-    logging.info(f"Expected Before Merge: {exp}")
-
-    logging.info(f"Observed Merged: {obs_merged}")
-    logging.info(f"Expected Merged: {exp_merged}")
-
-    logging.info(f"Result: {chisquare(obs_merged, exp_merged)}")
+    op = os.path.join(OUTPUT_DIR, f"BR-{Path(args.exp_fp).stem.split('_')[0]}-{Path(args.obs_fp).stem.split('_')[0]}.txt")
+    write_output(obs, obs_merged, exp, exp_merged, op)
 
 
 if __name__ == "__main__":
